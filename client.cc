@@ -14,6 +14,7 @@
 #include <string>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include "nettyprotocolbuffers.hpp"
 
 using boost::asio::ip::tcp;
 

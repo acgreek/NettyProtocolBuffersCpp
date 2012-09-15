@@ -8,6 +8,6 @@ add_executable(client client.cc)
 add_executable(server server.cc)
 
 
-target_link_libraries (client boost_system ssl pthread)
-target_link_libraries (server boost_system ssl pthread)
+target_link_libraries (client boost_system ssl pthread protobuf)
+target_link_libraries (server boost_system ssl pthread protobuf)
 
