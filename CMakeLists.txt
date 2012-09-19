@@ -7,7 +7,11 @@ project (HELLO)
 add_executable(client client.cc)
 add_executable(server server.cc)
 
+add_executable(client_sync client_sync.cc test.pb.cc)
+add_executable(server_sync server_sync.cc test.pb.cc)
 
 target_link_libraries (client boost_system ssl pthread protobuf)
 target_link_libraries (server boost_system ssl pthread protobuf)
 
+target_link_libraries (client_sync boost_system ssl pthread protobuf)
+target_link_libraries (server_sync boost_thread-mt boost_system ssl pthread protobuf)

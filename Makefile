@@ -112,6 +112,19 @@ client/fast:
 .PHONY : client/fast
 
 #=============================================================================
+# Target rules for targets named client_sync
+
+# Build rule for target.
+client_sync: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 client_sync
+.PHONY : client_sync
+
+# fast build rule for target.
+client_sync/fast:
+	$(MAKE) -f CMakeFiles/client_sync.dir/build.make CMakeFiles/client_sync.dir/build
+.PHONY : client_sync/fast
+
+#=============================================================================
 # Target rules for targets named server
 
 # Build rule for target.
@@ -123,6 +136,19 @@ server: cmake_check_build_system
 server/fast:
 	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/build
 .PHONY : server/fast
+
+#=============================================================================
+# Target rules for targets named server_sync
+
+# Build rule for target.
+server_sync: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 server_sync
+.PHONY : server_sync
+
+# fast build rule for target.
+server_sync/fast:
+	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/build
+.PHONY : server_sync/fast
 
 client.o: client.cc.o
 .PHONY : client.o
@@ -148,6 +174,30 @@ client.cc.s:
 	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/client.cc.s
 .PHONY : client.cc.s
 
+client_sync.o: client_sync.cc.o
+.PHONY : client_sync.o
+
+# target to build an object file
+client_sync.cc.o:
+	$(MAKE) -f CMakeFiles/client_sync.dir/build.make CMakeFiles/client_sync.dir/client_sync.cc.o
+.PHONY : client_sync.cc.o
+
+client_sync.i: client_sync.cc.i
+.PHONY : client_sync.i
+
+# target to preprocess a source file
+client_sync.cc.i:
+	$(MAKE) -f CMakeFiles/client_sync.dir/build.make CMakeFiles/client_sync.dir/client_sync.cc.i
+.PHONY : client_sync.cc.i
+
+client_sync.s: client_sync.cc.s
+.PHONY : client_sync.s
+
+# target to generate assembly for a file
+client_sync.cc.s:
+	$(MAKE) -f CMakeFiles/client_sync.dir/build.make CMakeFiles/client_sync.dir/client_sync.cc.s
+.PHONY : client_sync.cc.s
+
 server.o: server.cc.o
 .PHONY : server.o
 
@@ -172,6 +222,57 @@ server.cc.s:
 	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/server.cc.s
 .PHONY : server.cc.s
 
+server_sync.o: server_sync.cc.o
+.PHONY : server_sync.o
+
+# target to build an object file
+server_sync.cc.o:
+	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/server_sync.cc.o
+.PHONY : server_sync.cc.o
+
+server_sync.i: server_sync.cc.i
+.PHONY : server_sync.i
+
+# target to preprocess a source file
+server_sync.cc.i:
+	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/server_sync.cc.i
+.PHONY : server_sync.cc.i
+
+server_sync.s: server_sync.cc.s
+.PHONY : server_sync.s
+
+# target to generate assembly for a file
+server_sync.cc.s:
+	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/server_sync.cc.s
+.PHONY : server_sync.cc.s
+
+test.pb.o: test.pb.cc.o
+.PHONY : test.pb.o
+
+# target to build an object file
+test.pb.cc.o:
+	$(MAKE) -f CMakeFiles/client_sync.dir/build.make CMakeFiles/client_sync.dir/test.pb.cc.o
+	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/test.pb.cc.o
+.PHONY : test.pb.cc.o
+
+test.pb.i: test.pb.cc.i
+.PHONY : test.pb.i
+
+# target to preprocess a source file
+test.pb.cc.i:
+	$(MAKE) -f CMakeFiles/client_sync.dir/build.make CMakeFiles/client_sync.dir/test.pb.cc.i
+	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/test.pb.cc.i
+.PHONY : test.pb.cc.i
+
+test.pb.s: test.pb.cc.s
+.PHONY : test.pb.s
+
+# target to generate assembly for a file
+test.pb.cc.s:
+	$(MAKE) -f CMakeFiles/client_sync.dir/build.make CMakeFiles/client_sync.dir/test.pb.cc.s
+	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/test.pb.cc.s
+.PHONY : test.pb.cc.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -179,15 +280,26 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... client"
+	@echo "... client_sync"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... server"
+	@echo "... server_sync"
 	@echo "... client.o"
 	@echo "... client.i"
 	@echo "... client.s"
+	@echo "... client_sync.o"
+	@echo "... client_sync.i"
+	@echo "... client_sync.s"
 	@echo "... server.o"
 	@echo "... server.i"
 	@echo "... server.s"
+	@echo "... server_sync.o"
+	@echo "... server_sync.i"
+	@echo "... server_sync.s"
+	@echo "... test.pb.o"
+	@echo "... test.pb.i"
+	@echo "... test.pb.s"
 .PHONY : help
 
 

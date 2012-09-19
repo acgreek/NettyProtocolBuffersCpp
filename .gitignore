@@ -3,3 +3,5 @@ CMakeFiles/
 cmake_install.cmake
 client
 server
+client_sync
+server_sync
