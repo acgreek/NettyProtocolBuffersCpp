@@ -38,6 +38,9 @@ class DummySocket {
 			memcpy(ptr,&bytes_to_write [write_offset], write_this_time );
 			return write_this_time;
 		}
+		int read_buffers_remaining() {
+			return list_bytes_for_write_.size();
+		}
 
 };
 
@@ -49,7 +52,7 @@ TEST(WriteTest_basic) {
    	nettypbserializer.write(input);
 	return 0;
 }
-TEST(ReadTest_one_by_one) {
+TEST(ReadTest_one) {
 	DummySocket dummySocket;
 	NettyProtocolBuffersSocket<DummySocket> nettypbserializer(dummySocket); 
     	TestMessage input;
@@ -58,7 +61,7 @@ TEST(ReadTest_one_by_one) {
 	AssertEqInt(msize, 8);
 	std::vector<char > data(9);
 	data[0] = 8;
-	google::protobuf::io::ArrayOutputStream output(&data[0],8, -1);
+	google::protobuf::io::ArrayOutputStream output(&data[1],8, -1);
 	google::protobuf::io::CodedOutputStream codedOutputStream(&output);
 	input.SerializeToCodedStream (&codedOutputStream );
     	TestMessage output_mes;
@@ -67,4 +70,83 @@ TEST(ReadTest_one_by_one) {
 	AssertEqStr(output_mes.foo().c_str(), "blabal");;
 	return 0;
 }
-
+TEST(ReadTest_two) {
+	DummySocket dummySocket;
+	NettyProtocolBuffersSocket<DummySocket> nettypbserializer(dummySocket); 
+    	TestMessage input;
+    	input.set_foo("blabal");
+	size_t msize = input.ByteSize();
+	AssertEqInt(msize, 8);
+	std::vector<char > data(9);
+	data[0] = 8;
+	google::protobuf::io::ArrayOutputStream output(&data[1],8, -1);
+	google::protobuf::io::CodedOutputStream codedOutputStream(&output);
+	input.SerializeToCodedStream (&codedOutputStream );
+    	TestMessage output_mes;
+	dummySocket.push_read_bytes(data);
+	dummySocket.push_read_bytes(data);
+	dummySocket.push_read_bytes(data);
+   	nettypbserializer.read(output_mes);
+	AssertEqStr(output_mes.foo().c_str(), "blabal");;
+    	TestMessage output2_mes;
+   	nettypbserializer.read(output2_mes);
+	AssertEqStr(output2_mes.foo().c_str(), "blabal");;
+	AssertEqInt(dummySocket.read_buffers_remaining(), 1)
+	return 0;
+}
+TEST(ReadTest_two_different) {
+	DummySocket dummySocket;
+	NettyProtocolBuffersSocket<DummySocket> nettypbserializer(dummySocket); 
+    	TestMessage input;
+    	input.set_foo("blabal");
+	size_t msize = input.ByteSize();
+	AssertEqInt(msize, 8);
+	std::vector<char > data(80);
+	google::protobuf::io::ArrayOutputStream output(&data[0],80, -1);
+	google::protobuf::io::CodedOutputStream codedOutputStream(&output);
+	codedOutputStream.WriteVarint32( input.ByteSize());
+	input.SerializeToCodedStream (&codedOutputStream );
+    	input.set_foo("flasd");
+	codedOutputStream.WriteVarint32( input.ByteSize());
+	input.SerializeToCodedStream (&codedOutputStream );
+    	TestMessage output_mes;
+	dummySocket.push_read_bytes(data);
+	dummySocket.push_read_bytes(data);
+	dummySocket.push_read_bytes(data);
+   	nettypbserializer.read(output_mes);
+	AssertEqStr(output_mes.foo().c_str(), "blabal");;
+    	TestMessage output2_mes;
+   	nettypbserializer.read(output2_mes);
+	AssertEqStr(output2_mes.foo().c_str(), "flasd");;
+	AssertEqInt(dummySocket.read_buffers_remaining(), 1)
+	return 0;
+}
+TEST(ReadTest_two_small) {
+	DummySocket dummySocket;
+	NettyProtocolBuffersSocket<DummySocket> nettypbserializer(dummySocket); 
+    	TestMessage input;
+    	input.set_foo("b");
+	size_t msize = input.ByteSize();
+	AssertEqInt(msize, 3);
+	std::vector<char > data(11);
+	google::protobuf::io::ArrayOutputStream output(&data[0],11, -1);
+	google::protobuf::io::CodedOutputStream codedOutputStream(&output);
+	codedOutputStream.WriteVarint32(3);
+	input.SerializeToCodedStream (&codedOutputStream );
+    	input.set_foo("a");
+	codedOutputStream.WriteVarint32(3);
+	input.SerializeToCodedStream (&codedOutputStream );
+	codedOutputStream.WriteVarint32(3);
+	input.SerializeToCodedStream (&codedOutputStream );
+    	TestMessage output_mes;
+	dummySocket.push_read_bytes(data);
+	dummySocket.push_read_bytes(data);
+	dummySocket.push_read_bytes(data);
+   	nettypbserializer.read(output_mes);
+	AssertEqStr(output_mes.foo().c_str(), "b");;
+    	TestMessage output2_mes;
+   	nettypbserializer.read(output2_mes);
+	AssertEqStr(output2_mes.foo().c_str(), "a");;
+	AssertEqInt(dummySocket.read_buffers_remaining(), 1)
+	return 0;
+}

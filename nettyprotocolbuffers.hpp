@@ -5,6 +5,22 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
+static bool isCompleteVarInt(boost::asio::streambuf &buffer, size_t &offset_to_data){ 
+	const char * varint = boost::asio::buffer_cast<const char *> (buffer.data());
+	offset_to_data = 0;
+	while (offset_to_data != buffer.size()) {
+		unsigned char c = varint[offset_to_data];
+		offset_to_data++;
+		std::cout << "c= " << (int)c << "\n";
+		if ((c& (1<<7)) == 0)  {
+			std::cout << "truy\n";
+
+			return true;
+		}
+	}
+	return false;
+}
+
 template <typename SOCK_TYPE>
 class NettyProtocolBuffersSocket {
 	public:
@@ -31,22 +47,6 @@ class NettyProtocolBuffersSocket {
 		template <typename Handler>
 		void async_read(google::protobuf::MessageLite& message,  Handler handle) {
 		}
-		bool isCompleteVarInt(boost::asio::streambuf &buffer, size_t offset_to_data){ 
-			const char * varint = boost::asio::buffer_cast<const char *> (buffer.data());
-			offset_to_data = 0;
-			while (offset_to_data != buffer.size()) {
-				unsigned char c = varint[offset_to_data];
-				offset_to_data++;
-				std::cout << "c= " << (int)c << "\n";
-				if ((c& (1<<7)) == 0)  {
-					std::cout << "truy\n";
-			
-					return true;
-				}
-			}
-			return false;
-		}
-
 		void read(google::protobuf::MessageLite& message) {
 			size_t offset_to_data=0;
 			
@@ -64,9 +64,10 @@ class NettyProtocolBuffersSocket {
 			std::cout << "success " <<success << "data_szie " << data_size << "\n";
 			read_buffer_.consume(offset_to_data);
 			if (read_buffer_.size() < data_size)
-				boost::asio::read(socket_,read_buffer_, boost::asio::transfer_exactly(offset_to_data));
+				boost::asio::read(socket_,read_buffer_, boost::asio::transfer_exactly(data_size- read_buffer_.size()));
 			varint= boost::asio::buffer_cast<const google::protobuf::uint8 *> (read_buffer_.data());
 			message.ParseFromArray(varint, data_size);
+			read_buffer_.consume(data_size);
 
 		}
 
