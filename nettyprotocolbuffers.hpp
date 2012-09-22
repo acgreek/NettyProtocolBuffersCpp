@@ -16,7 +16,7 @@ class NettyProtocolBuffersSocket {
 
 		void write(google::protobuf::MessageLite& message) {
 			int serialized_size = message.ByteSize();
-			int total_output_size = google::protobuf::io::CodedOutputStream::VarintSize32(serialized_size);
+			size_t total_output_size = google::protobuf::io::CodedOutputStream::VarintSize32(serialized_size);
 			total_output_size +=serialized_size;
 			if (write_buffer_.size() < total_output_size) {
 				write_buffer_.resize(total_output_size+1);
@@ -31,7 +31,7 @@ class NettyProtocolBuffersSocket {
 		template <typename Handler>
 		void async_read(google::protobuf::MessageLite& message,  Handler handle) {
 		}
-		bool isCompleteVarInt(boost::asio::streambuf &buffer, int & offset_to_data){ 
+		bool isCompleteVarInt(boost::asio::streambuf &buffer, size_t offset_to_data){ 
 			const char * varint = boost::asio::buffer_cast<const char *> (buffer.data());
 			offset_to_data = 0;
 			while (offset_to_data != buffer.size()) {
@@ -48,7 +48,7 @@ class NettyProtocolBuffersSocket {
 		}
 
 		void read(google::protobuf::MessageLite& message) {
-			int offset_to_data=0;
+			size_t offset_to_data=0;
 			
 			do { //need to test this
 				std::cout << "s read\n";
@@ -80,7 +80,7 @@ class NettyProtocolBuffersSocket {
 			return false;
 		}
 		SOCK_TYPE & socket_;
-		std::vector<char> write_buffer_;
 		boost::asio::streambuf read_buffer_;
+		std::vector<char> write_buffer_;
 
 };
