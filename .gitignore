@@ -7,3 +7,5 @@ client_sync
 server_sync
 test
 Makefile
+test_gcov
+html
