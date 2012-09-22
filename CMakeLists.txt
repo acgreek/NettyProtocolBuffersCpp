@@ -23,7 +23,7 @@ add_executable(server_sync server_sync.cc test.pb.cc)
 
 target_link_libraries (client boost_system ssl pthread protobuf)
 target_link_libraries (server boost_system ssl pthread protobuf)
-target_link_libraries (test boost_system ssl pthread protobuf dl ExtremeCUnit)
+target_link_libraries (test boost_system ssl pthread protobuf ExtremeCUnit dl)
 
 target_link_libraries (client_sync boost_system ssl pthread protobuf)
 target_link_libraries (server_sync boost_thread-mt boost_system ssl pthread protobuf)

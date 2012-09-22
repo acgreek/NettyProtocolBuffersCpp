@@ -52,9 +52,13 @@ private:
     {
       // Attempt a connection to each endpoint in the list until we
       // successfully establish a connection.
-      boost::asio::async_connect(socket_, endpoint_iterator,
-          boost::bind(&client::handle_connect, this,
-            boost::asio::placeholders::error));
+#if BOOST_VERSION < 104801
+      tcp::endpoint endpoint = *endpoint_iterator;
+      socket_.async_connect(endpoint, boost::bind(&client::handle_connect, this, boost::asio::placeholders::error,++endpoint_iterator));
+      
+#else 
+      boost::asio::async_connect(socket_, endpoint_iterator, boost::bind(&client::handle_connect, this, boost::asio::placeholders::error));
+#endif 
     }
     else
     {
@@ -62,7 +66,12 @@ private:
     }
   }
 
+
+#if BOOST_VERSION < 104801
+  void handle_connect(const boost::system::error_code& err, tcp::resolver::iterator endpoint_iterator)
+#else 
   void handle_connect(const boost::system::error_code& err)
+#endif 
   {
     if (!err)
     {

@@ -63,8 +63,13 @@ class NettyProtocolBuffersSocket {
 			bool success = codedInputStream.ReadVarint32(&data_size);
 			std::cout << "success " <<success << "data_szie " << data_size << "\n";
 			read_buffer_.consume(offset_to_data);
-			if (read_buffer_.size() < data_size)
+			if (read_buffer_.size() < data_size) {
+#if BOOST_VERSION < 104801
+				boost::asio::read(socket_,read_buffer_, boost::asio::transfer_at_least(data_size- read_buffer_.size()));
+#else 
 				boost::asio::read(socket_,read_buffer_, boost::asio::transfer_exactly(data_size- read_buffer_.size()));
+#endif 
+			}
 			varint= boost::asio::buffer_cast<const google::protobuf::uint8 *> (read_buffer_.data());
 			message.ParseFromArray(varint, data_size);
 			read_buffer_.consume(data_size);

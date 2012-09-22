@@ -6,3 +6,4 @@ server
 client_sync
 server_sync
 test
+Makefile

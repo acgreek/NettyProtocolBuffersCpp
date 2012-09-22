@@ -38,7 +38,11 @@ int main(int argc, char* argv[])
     tcp::resolver::iterator iterator = resolver.resolve(query);
 
     tcp::socket s(io_service);
+#if BOOST_VERSION < 104801
+    s.connect(*iterator);
+#else 
     boost::asio::connect(s, iterator);
+#endif 
     NettyProtocolBuffersSocket<boost::asio::ip::tcp::socket> nettypbserializer(s);
     
 
