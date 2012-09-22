@@ -86,7 +86,7 @@ void protobuf_AddDesc_test_2eproto() {
 // Force AddDescriptors() to be called at static initialization time.
 struct StaticDescriptorInitializer_test_2eproto {
   StaticDescriptorInitializer_test_2eproto() {
-    protobuf_AddDesc_test_2eproto();
+    //protobuf_AddDesc_test_2eproto();
   }
 } static_descriptor_initializer_test_2eproto_;
 
@@ -350,8 +350,9 @@ void TestMessage::Swap(TestMessage* other) {
 ::google::protobuf::Metadata TestMessage::GetMetadata() const {
   protobuf_AssignDescriptorsOnce();
   ::google::protobuf::Metadata metadata;
-  metadata.descriptor = TestMessage_descriptor_;
-  metadata.reflection = TestMessage_reflection_;
+
+  //metadata.descriptor = TestMessage_descriptor_;
+  //metadata.reflection = TestMessage_reflection_;
   return metadata;
 }
 

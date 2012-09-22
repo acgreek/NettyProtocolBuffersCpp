@@ -150,6 +150,19 @@ server_sync/fast:
 	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/build
 .PHONY : server_sync/fast
 
+#=============================================================================
+# Target rules for targets named test
+
+# Build rule for target.
+test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test
+.PHONY : test
+
+# fast build rule for target.
+test/fast:
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/build
+.PHONY : test/fast
+
 client.o: client.cc.o
 .PHONY : client.o
 
@@ -246,6 +259,30 @@ server_sync.cc.s:
 	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/server_sync.cc.s
 .PHONY : server_sync.cc.s
 
+test.o: test.cc.o
+.PHONY : test.o
+
+# target to build an object file
+test.cc.o:
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.cc.o
+.PHONY : test.cc.o
+
+test.i: test.cc.i
+.PHONY : test.i
+
+# target to preprocess a source file
+test.cc.i:
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.cc.i
+.PHONY : test.cc.i
+
+test.s: test.cc.s
+.PHONY : test.s
+
+# target to generate assembly for a file
+test.cc.s:
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.cc.s
+.PHONY : test.cc.s
+
 test.pb.o: test.pb.cc.o
 .PHONY : test.pb.o
 
@@ -253,6 +290,7 @@ test.pb.o: test.pb.cc.o
 test.pb.cc.o:
 	$(MAKE) -f CMakeFiles/client_sync.dir/build.make CMakeFiles/client_sync.dir/test.pb.cc.o
 	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/test.pb.cc.o
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.pb.cc.o
 .PHONY : test.pb.cc.o
 
 test.pb.i: test.pb.cc.i
@@ -262,6 +300,7 @@ test.pb.i: test.pb.cc.i
 test.pb.cc.i:
 	$(MAKE) -f CMakeFiles/client_sync.dir/build.make CMakeFiles/client_sync.dir/test.pb.cc.i
 	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/test.pb.cc.i
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.pb.cc.i
 .PHONY : test.pb.cc.i
 
 test.pb.s: test.pb.cc.s
@@ -271,6 +310,7 @@ test.pb.s: test.pb.cc.s
 test.pb.cc.s:
 	$(MAKE) -f CMakeFiles/client_sync.dir/build.make CMakeFiles/client_sync.dir/test.pb.cc.s
 	$(MAKE) -f CMakeFiles/server_sync.dir/build.make CMakeFiles/server_sync.dir/test.pb.cc.s
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.pb.cc.s
 .PHONY : test.pb.cc.s
 
 # Help Target
@@ -285,6 +325,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... server"
 	@echo "... server_sync"
+	@echo "... test"
 	@echo "... client.o"
 	@echo "... client.i"
 	@echo "... client.s"
@@ -297,6 +338,9 @@ help:
 	@echo "... server_sync.o"
 	@echo "... server_sync.i"
 	@echo "... server_sync.s"
+	@echo "... test.o"
+	@echo "... test.i"
+	@echo "... test.s"
 	@echo "... test.pb.o"
 	@echo "... test.pb.i"
 	@echo "... test.pb.s"
