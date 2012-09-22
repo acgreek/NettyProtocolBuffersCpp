@@ -36,6 +36,10 @@ class DummySocket {
 			size_t write_offset=0;
 			size_t write_this_time = size < bytes_to_write.size()-write_offset?size :bytes_to_write.size()-write_offset ;
 			memcpy(ptr,&bytes_to_write [write_offset], write_this_time );
+			if (size < bytes_to_write.size()) {
+				std::vector<char> rest(bytes_to_write.begin() + size,bytes_to_write.end());
+				list_bytes_for_write_.push_front(rest);
+			}
 			return write_this_time;
 		}
 		int read_buffers_remaining() {
@@ -94,6 +98,31 @@ TEST(ReadTest_two) {
 	AssertEqInt(dummySocket.read_buffers_remaining(), 1)
 	return 0;
 }
+TEST(ReadTest_two_different_large) {
+	DummySocket dummySocket;
+	NettyProtocolBuffersSocket<DummySocket> nettypbserializer(dummySocket); 
+    	TestMessage input;
+    	input.set_foo("blabskdfjaldfjaslkdjfaslkdjfasdlkjfasldfjalksdfjlksadflkasdflkasjdfklasdasghdfgjksdgfhjksdfhgjksdfhgkjsdhfgjsfgkjadfklajsdflkjasdkfjasdklfjaklsdfjkalsdfjaklsdjflkasdjfklasdjflkasdjlkfasjdflkasjdlkfjasdlfkjasdlkfjalsdkjflaksdfjlkasdjflkasdfjlkasdjflksjdflkajdflkajsdflkjasdkfljasdlfjasdlkfjaslkdjfaskldjfalksdfjadkfajsdkfjaslkdfjaskdlfjaskldjfalskdjflkasdjflaksdjflaksdfjlkasdjfklasdfjlkasdjfklasdjflkasdjflkasdjflkasdjflkasdjfalksdjfalksdjfalskdjflkasdjflaksdjflkasdjflkasdjfalblabskdfjaldfjaslkdjfaslkdjfasdlkjfasldfjalksdfjlksadflkasdflkasjdfklasdasghdfgjksdgfhjksdfhgjksdfhgkjsdhfgjsfgkjadfklajsdflkjasdkfjasdklfjaklsdfjkalsdfjaklsdjflkasdjfklasdjflkasdjlkfasjdflkasjdlkfjasdlfkjasdlkfjalsdkjflaksdfjlkasdjflkasdfjlkasdjflksjdflkajdflkajsdflkjasdkfljasdlfjasdlkfjaslkdjfaskldjfalksdfjadkfajsdkfjaslkdfjaskdlfjaskldjfalskdjflkasdjflaksdjflaksdfjlkasdjfklasdfjlkasdjfklasdjflkasdjflkasdjflkasdjflkasdjfalksdjfalksdjfalskdjflkasdjflaksdjflkasdjflkasdjfal");
+	std::vector<char > data(9800);
+	google::protobuf::io::ArrayOutputStream output(&data[0],9800, -1);
+	google::protobuf::io::CodedOutputStream codedOutputStream(&output);
+	codedOutputStream.WriteVarint32( input.ByteSize());
+	input.SerializeToCodedStream (&codedOutputStream );
+    	input.set_foo("flasd");
+	codedOutputStream.WriteVarint32( input.ByteSize());
+	input.SerializeToCodedStream (&codedOutputStream );
+    	TestMessage output_mes;
+	dummySocket.push_read_bytes(data);
+	//dummySocket.push_read_bytes(data);
+	//dummySocket.push_read_bytes(data);
+   	nettypbserializer.read(output_mes);
+	AssertEqInt(output_mes.foo().size(), 954);;
+    	TestMessage output2_mes;
+   	nettypbserializer.read(output2_mes);
+	AssertEqStr(output2_mes.foo().c_str(), "flasd");;
+	AssertEqInt(dummySocket.read_buffers_remaining(), 1)
+	return 0;
+}
 TEST(ReadTest_two_different) {
 	DummySocket dummySocket;
 	NettyProtocolBuffersSocket<DummySocket> nettypbserializer(dummySocket); 
@@ -148,5 +177,20 @@ TEST(ReadTest_two_small) {
    	nettypbserializer.read(output2_mes);
 	AssertEqStr(output2_mes.foo().c_str(), "a");;
 	AssertEqInt(dummySocket.read_buffers_remaining(), 1)
+	return 0;
+}
+TEST(VarInt_empty ) {
+	size_t offset;
+	Assert(false == isCompleteVarInt("", 0,  offset));
+	return 0;
+}
+TEST(VarInt_not_complete ) {
+	size_t offset;
+	Assert(false == isCompleteVarInt("\xff", 1,  offset));
+	return 0;
+}
+TEST(VarInt_complete_two_char  ) {
+	size_t offset;
+	Assert(true == isCompleteVarInt("\xff\000", 2,  offset));
 	return 0;
 }
