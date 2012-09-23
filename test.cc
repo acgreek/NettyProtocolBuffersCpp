@@ -9,10 +9,22 @@ class DummySocket {
 		}
 		template<typename ConstBufferSequence>
 		std::size_t write_some( const ConstBufferSequence & buffers) {
+			char * ptr = (char *)boost::asio::detail::buffer_cast_helper(buffers);
 			return 1;
+		}
+		template< typename ConstBufferSequence, typename ReadHandler>
+		void async_write_some(const ConstBufferSequence & buffers, ReadHandler handler) {
+			boost::system::error_code ec;
+			size_t bytes_written= write_some(buffers, ec);
+			handler(ec, bytes_written);
 		}
 		template< typename ConstBufferSequence>
 		std::size_t write_some(const ConstBufferSequence & buffers, boost::system::error_code & ec) {
+			char * ptr = (char *)boost::asio::detail::buffer_cast_helper(*buffers.begin());
+			std::size_t size= boost::asio::detail::buffer_size_helper(*buffers.begin());
+			std::vector<char> vec(size);
+			memcpy(&vec[0], ptr, size);
+			list_bytes_for_read_.push_back(vec);
 			return 1;
 		}
 		template <typename MutableBufferSequence, typename ReadHandler>
@@ -45,6 +57,12 @@ class DummySocket {
 			}
 			return write_this_time;
 		}
+		std::vector<char> getReadBuffer() {
+			std::vector<char> b = list_bytes_for_read_.front();
+			list_bytes_for_read_.pop_front();
+			return b;
+
+		}
 		int read_buffers_remaining() {
 			return list_bytes_for_write_.size();
 		}
@@ -60,10 +78,12 @@ TEST(WriteTest_basic) {
     	TestMessage input;
     	input.set_foo("blabal");
    	nettypbserializer.write(input);
+	std::vector<char> b = dummySocket.getReadBuffer();
+	AssertEqInt(9, (int)b.size());
 	return 0;
 }
 int foo_called=0;
-void foo() {foo_called++; }
+void foo(const boost::system::error_code& err,std::size_t size) {foo_called++; }
 
 TEST(AsyncWriteTest_basic) {
 	DummySocket dummySocket;
@@ -71,8 +91,10 @@ TEST(AsyncWriteTest_basic) {
     	TestMessage input;
     	input.set_foo("blabal");
 	AssertEqInt(foo_called, 0);
-   	nettypbserializer.async_write(input,foo);
+   	nettypbserializer.async_write(input,boost::bind(&foo, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred ));
 	AssertEqInt(foo_called, 1);
+	std::vector<char> b = dummySocket.getReadBuffer();
+	AssertEqInt(9, (int)b.size());
 	
 	return 0;
 }

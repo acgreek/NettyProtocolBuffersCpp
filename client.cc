@@ -14,6 +14,7 @@
 #include <string>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include "test.pb.h"
 #include "nettyprotocolbuffers.hpp"
 
 using boost::asio::ip::tcp;
@@ -24,17 +25,9 @@ public:
   client(boost::asio::io_service& io_service,
       const std::string& server, const std::string& path)
     : resolver_(io_service),
-      socket_(io_service)
-  {
-    // Form the request. We specify the "Connection: close" header so that the
-    // server will close the socket after transmitting the response. This will
-    // allow us to treat all data up until the EOF as the content.
-    std::ostream request_stream(&request_);
-    request_stream << "GET " << path << " HTTP/1.0\r\n";
-    request_stream << "Host: " << server << "\r\n";
-    request_stream << "Accept: */*\r\n";
-    request_stream << "Connection: close\r\n\r\n";
+      socket_(io_service),resultMessage_(), nettypbserializer_(socket_)
 
+  {
     // Start an asynchronous resolve to translate the server and service names
     // into a list of endpoints.
     tcp::resolver::query query(server, "http");
@@ -76,9 +69,10 @@ private:
     if (!err)
     {
       // The connection was successful. Send the request.
-      boost::asio::async_write(socket_, request_,
-          boost::bind(&client::handle_write_request, this,
-            boost::asio::placeholders::error));
+      		TestMessage input;
+
+    		input.set_foo("blabal");
+		nettypbserializer_.async_write(input, boost::bind(&client::handle_write_request, this,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred )); 
     }
     else
     {
@@ -86,7 +80,7 @@ private:
     }
   }
 
-  void handle_write_request(const boost::system::error_code& err)
+  void handle_write_request(const boost::system::error_code& err, size_t bytes_written)
   {
     if (!err)
     {
@@ -127,10 +121,9 @@ private:
         return;
       }
 
+
       // Read the response headers, which are terminated by a blank line.
-      boost::asio::async_read_until(socket_, response_, "\r\n\r\n",
-          boost::bind(&client::handle_read_headers, this,
-            boost::asio::placeholders::error));
+      nettypbserializer_.async_read(resultMessage_, boost::bind(&client::handle_read_headers, this, boost::ref(resultMessage_)));
     }
     else
     {
@@ -138,8 +131,9 @@ private:
     }
   }
 
-  void handle_read_headers(const boost::system::error_code& err)
+  void handle_read_headers(google::protobuf::MessageLite& message)
   {
+	  /*
     if (!err)
     {
       // Process the response headers.
@@ -163,6 +157,7 @@ private:
     {
       std::cout << "Error: " << err << "\n";
     }
+    */
   }
 
   void handle_read_content(const boost::system::error_code& err)
@@ -188,6 +183,9 @@ private:
   tcp::socket socket_;
   boost::asio::streambuf request_;
   boost::asio::streambuf response_;
+
+    TestMessage resultMessage_;
+    NettyProtocolBuffersSocket<boost::asio::ip::tcp::socket> nettypbserializer_;
 };
 
 int main(int argc, char* argv[])
