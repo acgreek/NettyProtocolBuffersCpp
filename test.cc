@@ -94,6 +94,10 @@ TEST(ReadTest_one) {
 	AssertEqStr(output_mes.foo().c_str(), "blabal");;
 	return 0;
 }
+
+void read_foo(google::protobuf::MessageLite& message) {
+	foo_called++;
+}
 TEST(AsyncReadTest_one) {
 	DummySocket dummySocket;
 	NettyProtocolBuffersSocket<DummySocket> nettypbserializer(dummySocket); 
@@ -108,8 +112,33 @@ TEST(AsyncReadTest_one) {
 	input.SerializeToCodedStream (&codedOutputStream );
     	TestMessage output_mes;
 	dummySocket.push_read_bytes(data);
-   	nettypbserializer.async_read(output_mes,foo);
+   	nettypbserializer.async_read(output_mes,read_foo);
 	AssertEqStr(output_mes.foo().c_str(), "blabal");;
+	return 0;
+}
+TEST(AsyncReadTest_two_different_large) {
+	DummySocket dummySocket;
+	NettyProtocolBuffersSocket<DummySocket> nettypbserializer(dummySocket); 
+    	TestMessage input;
+    	input.set_foo("blabskdfjaldfjaslkdjfaslkdjfasdlkjfasldfjalksdfjlksadflkasdflkasjdfklasdasghdfgjksdgfhjksdfhgjksdfhgkjsdhfgjsfgkjadfklajsdflkjasdkfjasdklfjaklsdfjkalsdfjaklsdjflkasdjfklasdjflkasdjlkfasjdflkasjdlkfjasdlfkjasdlkfjalsdkjflaksdfjlkasdjflkasdfjlkasdjflksjdflkajdflkajsdflkjasdkfljasdlfjasdlkfjaslkdjfaskldjfalksdfjadkfajsdkfjaslkdfjaskdlfjaskldjfalskdjflkasdjflaksdjflaksdfjlkasdjfklasdfjlkasdjfklasdjflkasdjflkasdjflkasdjflkasdjfalksdjfalksdjfalskdjflkasdjflaksdjflkasdjflkasdjfalblabskdfjaldfjaslkdjfaslkdjfasdlkjfasldfjalksdfjlksadflkasdflkasjdfklasdasghdfgjksdgfhjksdfhgjksdfhgkjsdhfgjsfgkjadfklajsdflkjasdkfjasdklfjaklsdfjkalsdfjaklsdjflkasdjfklasdjflkasdjlkfasjdflkasjdlkfjasdlfkjasdlkfjalsdkjflaksdfjlkasdjflkasdfjlkasdjflksjdflkajdflkajsdflkjasdkfljasdlfjasdlkfjaslkdjfaskldjfalksdfjadkfajsdkfjaslkdfjaskdlfjaskldjfalskdjflkasdjflaksdjflaksdfjlkasdjfklasdfjlkasdjfklasdjflkasdjflkasdjflkasdjflkasdjfalksdjfalksdjfalskdjflkasdjflaksdjflkasdjflkasdjfal");
+	std::vector<char > data(9800);
+	google::protobuf::io::ArrayOutputStream output(&data[0],9800, -1);
+	google::protobuf::io::CodedOutputStream codedOutputStream(&output);
+	codedOutputStream.WriteVarint32( input.ByteSize());
+	input.SerializeToCodedStream (&codedOutputStream );
+    	input.set_foo("flasd");
+	codedOutputStream.WriteVarint32( input.ByteSize());
+	input.SerializeToCodedStream (&codedOutputStream );
+    	TestMessage output_mes;
+	dummySocket.push_read_bytes(data);
+	//dummySocket.push_read_bytes(data);
+	//dummySocket.push_read_bytes(data);
+   	nettypbserializer.async_read(output_mes, read_foo);
+	AssertEqInt(output_mes.foo().size(), 954);;
+    	TestMessage output2_mes;
+   	nettypbserializer.async_read(output2_mes,read_foo);
+	AssertEqStr(output2_mes.foo().c_str(), "flasd");;
+	AssertEqInt(dummySocket.read_buffers_remaining(), 1)
 	return 0;
 }
 TEST(ReadTest_two) {
