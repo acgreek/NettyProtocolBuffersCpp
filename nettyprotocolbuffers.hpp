@@ -28,22 +28,22 @@ class NettyProtocolBuffersSocket {
 	public:
 		NettyProtocolBuffersSocket (SOCK_TYPE & socket): socket_(socket), read_buffer_(), write_buffer_() {}
 		virtual ~NettyProtocolBuffersSocket() {}
+		
+		template <typename Handler>
+		void async_write_complete(const boost::system::error_code& e,std::size_t message_size, boost::tuple<Handler> handle) {
+			boost::get<0>(handle)(e,message_size);
+		}
+			
 		template <typename Handler>
 		void async_write(google::protobuf::MessageLite& message,  Handler handle) {
-			handle();
+			size_t total_output_size = serializeForWrite(message);
+			void (NettyProtocolBuffersSocket<SOCK_TYPE>::*f1)(const boost::system::error_code&,std::size_t offset,boost::tuple<Handler>) =&NettyProtocolBuffersSocket<SOCK_TYPE>::async_write_complete <Handler> ;
+			boost::asio::async_write(socket_,boost::asio::buffer(&write_buffer_,total_output_size), boost::asio::transfer_at_least(total_output_size), boost::bind(f1,this,boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred, boost::make_tuple(handle)));
+      			//boost::asio::async_write(socket_, boost::asio::buffer(&write_buffer_[0],total_output_size)); 
 		}
 
 		void write(google::protobuf::MessageLite& message) {
-			int serialized_size = message.ByteSize();
-			size_t total_output_size = google::protobuf::io::CodedOutputStream::VarintSize32(serialized_size);
-			total_output_size +=serialized_size;
-			if (write_buffer_.size() < total_output_size) {
-				write_buffer_.resize(total_output_size+1);
-			}
-			google::protobuf::io::ArrayOutputStream output(&write_buffer_[0],total_output_size, -1);
-			google::protobuf::io::CodedOutputStream codedOutputStream(&output);
-			codedOutputStream .WriteVarint32(serialized_size);
-			message.SerializeToCodedStream (&codedOutputStream );
+			size_t total_output_size = serializeForWrite(message);
       			boost::asio::write(socket_, boost::asio::buffer(&write_buffer_[0],total_output_size)); 
 		}
 		template <typename Handler>
@@ -104,6 +104,20 @@ class NettyProtocolBuffersSocket {
 		}
 
 	private:
+		size_t serializeForWrite(google::protobuf::MessageLite& message) {
+			int serialized_size = message.ByteSize();
+			size_t total_output_size = google::protobuf::io::CodedOutputStream::VarintSize32(serialized_size);
+			total_output_size +=serialized_size;
+			if (write_buffer_.size() < total_output_size) {
+				write_buffer_.resize(total_output_size+1);
+			}
+			google::protobuf::io::ArrayOutputStream output(&write_buffer_[0],total_output_size, -1);
+			google::protobuf::io::CodedOutputStream codedOutputStream(&output);
+			codedOutputStream .WriteVarint32(serialized_size);
+			message.SerializeToCodedStream (&codedOutputStream );
+			return total_output_size;
+
+		}
 		SOCK_TYPE & socket_;
 		boost::asio::streambuf read_buffer_;
 		std::vector<char> write_buffer_;
