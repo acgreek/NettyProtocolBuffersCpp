@@ -117,7 +117,7 @@ TEST(ReadTest_one) {
 	return 0;
 }
 
-void read_foo(google::protobuf::MessageLite& message) {
+void read_foo(const boost::system::error_code& err,std::size_t size) {
 	foo_called++;
 }
 TEST(AsyncReadTest_one) {

@@ -36,7 +36,7 @@ add_executable(server_sync server_sync.cc test.pb.cc)
 SET(COMMON_SYSTEM_LIBS boost_system ssl pthread protobuf)
 SET(TEST_LIBS ExtremeCUnit dl)
 
-target_link_libraries (client ${COMMON_SYSTEM_LIBS})
+target_link_libraries (client ${COMMON_SYSTEM_LIBS} boost_chrono-mt)
 target_link_libraries (server ${COMMON_SYSTEM_LIBS})
 target_link_libraries (test_prog ${COMMON_SYSTEM_LIBS} ${TEST_LIBS})
 target_link_libraries (test_gcov ${COMMON_SYSTEM_LIBS} ${TEST_LIBS})

@@ -56,7 +56,7 @@ class NettyProtocolBuffersSocket {
 			const google::protobuf::uint8 *varint= boost::asio::buffer_cast<const google::protobuf::uint8 *> (read_buffer_.data());
 			message.ParseFromArray(varint, message_size);
 			read_buffer_.consume(message_size);
-			boost::get<0>(handle)(message);
+			boost::get<0>(handle)(e, message_size);
 		}
 		template <typename Handler>
 		void async_read_varint(const boost::system::error_code& e,std::size_t bytes_read, google::protobuf::MessageLite& message, boost::tuple<Handler> handle) {
