@@ -21,7 +21,7 @@ class session
 {
 	public:
 		session(boost::asio::io_service& io_service)
-			: socket_(io_service), nettypbserializer_(socket_)
+			: socket_(io_service), nettypbserializer_(socket_), output_()
 		{
 		}
 
@@ -33,24 +33,23 @@ class session
 		void start()
 		{
 			sendMessage();
+			nettypbserializer_.async_read(output_, boost::bind(&session::handle_read, this,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred )); 
+
 		}
 		void sendMessage() {
 			TestMessage input;
 
 			input.set_foo("blabal");
-			nettypbserializer_.async_write(input, boost::bind(&session::handle_write_request, this,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred )); 
+			nettypbserializer_.async_write(input, boost::bind(&session::handle_write, this,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred )); 
 		}
 
 	private:
-		void handle_read(const boost::system::error_code& error,
-				size_t bytes_transferred)
+		void handle_read(const boost::system::error_code& error, size_t bytes_transferred)
 		{
 			if (!error)
 			{
-				boost::asio::async_write(socket_,
-						boost::asio::buffer(data_, bytes_transferred),
-						boost::bind(&session::handle_write, this,
-							boost::asio::placeholders::error));
+//				std::cout << "received" << std::endl;
+				nettypbserializer_.async_read(output_, boost::bind(&session::handle_read, this,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred )); 
 			}
 			else
 			{
@@ -58,14 +57,17 @@ class session
 			}
 		}
 
-		void handle_write(const boost::system::error_code& error)
+		void handle_write(const boost::system::error_code& error, size_t bytes_transferred)
 		{
 			if (!error)
 			{
-				socket_.async_read_some(boost::asio::buffer(data_, max_length),
-						boost::bind(&session::handle_read, this,
-							boost::asio::placeholders::error,
-							boost::asio::placeholders::bytes_transferred));
+
+				TestMessage input;
+
+				input.set_foo("blabal1");
+				nettypbserializer_.async_write(input, boost::bind(&session::handle_write, this,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred )); 
+				//std::cout << "sent" << std::endl;
+				//sleep(1);
 			}
 			else
 			{
@@ -88,6 +90,7 @@ class session
 		enum { max_length = 1024 };
 		char data_[max_length];
 		NettyProtocolBuffersSocket<boost::asio::ip::tcp::socket> nettypbserializer_;
+		TestMessage output_;
 
 };
 

@@ -18,8 +18,8 @@
 #include "test.pb.h"
 #include "nettyprotocolbuffers.hpp"
 
-int bytes_read=0;
-int bytes_written=0;
+double bytes_read=0;
+double bytes_written=0;
 
 boost::chrono::high_resolution_clock::time_point startTime;
 boost::chrono::high_resolution_clock::time_point endTime ;
@@ -38,10 +38,7 @@ class client
 		// Start an asynchronous resolve to translate the server and service names
 		// into a list of endpoints.
 		tcp::resolver::query query(server, port);
-		resolver_.async_resolve(query,
-				boost::bind(&client::handle_resolve, this,
-					boost::asio::placeholders::error,
-					boost::asio::placeholders::iterator));
+		resolver_.async_resolve(query, boost::bind(&client::handle_resolve, this, boost::asio::placeholders::error, boost::asio::placeholders::iterator));
 	}
 
 	private:
@@ -79,6 +76,7 @@ class client
 
 					// The connection was successful. Send the request.
 					sendMessage();
+					nettypbserializer_.async_read(resultMessage_, boost::bind(&client::handle_read_headers, this, boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred));
 				}
 				else
 				{
@@ -86,16 +84,20 @@ class client
 				}
 			}
 		void sendMessage() {
+//			std::cout << "sent" << std::endl;
 			TestMessage input;
 
 			input.set_foo("blabal");
 			nettypbserializer_.async_write(input, boost::bind(&client::handle_write_request, this,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred )); 
+			//sleep(1);
+			
 		}
 
-		void handle_write_request(const boost::system::error_code& err, size_t bytes_written)
+		void handle_write_request(const boost::system::error_code& err, size_t written)
 		{
 			if (!err)
 			{
+				bytes_written+= written;
 				sendMessage();
 			}
 			else
@@ -108,27 +110,9 @@ class client
 		{
 			if (!err)
 			{
-				// Check that response is OK.
-				std::istream response_stream(&response_);
-				std::string http_version;
-				response_stream >> http_version;
-				unsigned int status_code;
-				response_stream >> status_code;
-				std::string status_message;
-				std::getline(response_stream, status_message);
-				if (!response_stream || http_version.substr(0, 5) != "HTTP/")
-				{
-					std::cout << "Invalid response\n";
-					return;
-				}
-				if (status_code != 200)
-				{
-					std::cout << "Response returned with status code ";
-					std::cout << status_code << "\n";
-					return;
-				}
 
 
+//				std::cout << "received" << std::endl;
 				// Read the response headers, which are terminated by a blank line.
 				nettypbserializer_.async_read(resultMessage_, boost::bind(&client::handle_read_headers, this, boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred));
 			}
@@ -142,6 +126,7 @@ class client
 		{
 			if (!err)
 			{
+				bytes_read+= size;
 				handle_read_status_line(err);
 			}
 			else
@@ -205,6 +190,10 @@ int main(int argc, char* argv[])
 		std::cout << "Time spent " << lUDuration.count() << " [us] " << std::endl;
 		std::cout << "Time spent " << lMDuration.count() << " [ms] " << std::endl;
 		std::cout << "Time spent " << lDuration.count() << " [s] " << std::endl; 
+
+		std::cout << "bytes_read/msec " << bytes_read/ lMDuration.count() << " [s] " << std::endl; 
+		std::cout << "bytes_written/msec " << bytes_written/ lMDuration.count() << " [s] " << std::endl; 
+
 	}
 	catch (std::exception& e)
 	{
