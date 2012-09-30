@@ -1,0 +1,4 @@
+#!/bin/bash
+uperf  -s &
+uperf  -m iperf.xml
+killall uperf

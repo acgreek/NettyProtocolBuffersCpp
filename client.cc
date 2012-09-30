@@ -73,6 +73,7 @@ class client
 				if (!err)
 				{
 					startTime = boost::chrono::high_resolution_clock::now();
+					socket_.set_option(tcp::no_delay(true));
 
 					// The connection was successful. Send the request.
 					sendMessage();
@@ -163,6 +164,19 @@ class client
 		NettyProtocolBuffersSocket<boost::asio::ip::tcp::socket> nettypbserializer_;
 };
 
+void print_perf_double(const char * what, double bytes,double sec) {
+	std::cout << what <<  " ";
+	double bytes_sec = bytes/sec;
+	double bits_sec_bytes = bytes_sec*8;
+	if (bits_sec_bytes> 1000000 )  {
+		std::cout << std::fixed<< (bits_sec_bytes/1000000) << "Mb/s " << std::endl; 
+	}else if (bits_sec_bytes > 1000 ){
+		std::cout << std::fixed<< (bits_sec_bytes/1000) << "kb/s "  << std::endl; 
+	}else {
+		std::cout << std::fixed<< (bits_sec_bytes) << "b/s "  << std::endl; 
+	}
+	
+}
 int main(int argc, char* argv[])
 {
 	endTime=startTime =boost::chrono::high_resolution_clock::now();
@@ -191,8 +205,12 @@ int main(int argc, char* argv[])
 		std::cout << "Time spent " << lMDuration.count() << " [ms] " << std::endl;
 		std::cout << "Time spent " << lDuration.count() << " [s] " << std::endl; 
 
-		std::cout << std::fixed<< "bytes_read/msec " << bytes_read/ lDuration.count() << " [s] " << std::endl; 
-		std::cout << std::fixed<<"bytes_written/msec " << bytes_written/ lDuration.count() << " [s] " << std::endl; 
+		print_perf_double("read", bytes_read,lDuration.count());
+		print_perf_double("writen", bytes_written,lDuration.count());
+
+//		std::cout << std::fixed<< "bytes_read/msec " << bytes_read/ lDuration.count() << " [s] " << std::endl; 
+
+//		std::cout << std::fixed<<"bytes_written/msec " << bytes_written/ lDuration.count() << " [s] " << std::endl; 
 
 	}
 	catch (std::exception& e)

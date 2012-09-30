@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<profile name="iPERF">
+  <group nthreads="1">
+        <transaction iterations="1">
+            <flowop type="connect" options="remotehost=localhost protocol=tcp
+	    wndsz=50k  tcp_nodelay"/>
+        </transaction>
+        <transaction duration="30s">
+            <flowop type="write" options="count=10 size=8B"/>
+        </transaction>
+        <transaction iterations="1">
+            <flowop type="disconnect" />
+        </transaction>
+  </group>
+
+</profile>

@@ -32,6 +32,7 @@ class session
 
 		void start()
 		{
+			socket_.set_option(tcp::no_delay(true));
 			sendMessage();
 			nettypbserializer_.async_read(output_, boost::bind(&session::handle_read, this,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred )); 
 
