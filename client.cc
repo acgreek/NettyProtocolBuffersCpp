@@ -191,8 +191,8 @@ int main(int argc, char* argv[])
 		std::cout << "Time spent " << lMDuration.count() << " [ms] " << std::endl;
 		std::cout << "Time spent " << lDuration.count() << " [s] " << std::endl; 
 
-		std::cout << "bytes_read/msec " << bytes_read/ lMDuration.count() << " [s] " << std::endl; 
-		std::cout << "bytes_written/msec " << bytes_written/ lMDuration.count() << " [s] " << std::endl; 
+		std::cout << std::fixed<< "bytes_read/msec " << bytes_read/ lDuration.count() << " [s] " << std::endl; 
+		std::cout << std::fixed<<"bytes_written/msec " << bytes_written/ lDuration.count() << " [s] " << std::endl; 
 
 	}
 	catch (std::exception& e)
