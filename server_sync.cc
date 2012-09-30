@@ -14,6 +14,8 @@
 #include <boost/smart_ptr.hpp>
 #include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>
+#include "test.pb.h"
+#include "nettyprotocolbuffers.hpp"
 
 using boost::asio::ip::tcp;
 
@@ -28,17 +30,16 @@ void session(socket_ptr sock)
     std::cout << "connected\n";
     for (;;)
     {
-      char data[max_length];
+      NettyProtocolBuffersSocket<boost::asio::ip::tcp::socket> nettypbserializer(*sock);
+      TestMessage output_;
 
       boost::system::error_code error;
-      size_t length = sock->read_some(boost::asio::buffer(data), error);
-      if (error == boost::asio::error::eof)
-        break; // Connection closed cleanly by peer.
-      else if (error)
-        throw boost::system::system_error(error); // Some other error.
-      std::cout << "got message " << length << "\n";
-
-      boost::asio::write(*sock, boost::asio::buffer(data, length));
+      
+      nettypbserializer.read(output_);
+    //  if (error)
+     //   throw boost::system::system_error(error); // Some other error.
+      std::cout << "got message " << output_.foo()<< "\n";
+      nettypbserializer.write(output_);
     }
     std::cout << "disconnected\n";
   }
