@@ -283,3 +283,42 @@ TEST(VarInt_complete_two_char  ) {
 	Assert(true == isCompleteVarInt("\xff\000", 2,  offset));
 	return 0;
 }
+TEST(ReadVarint8) {
+	const char data[] = "\010f"; 
+	google::protobuf::uint32 x= 0;
+	const char * offset = ReadVarint32(x, data,2);
+	Assert(offset !=NULL);
+	Assert(*offset == data[1]);
+	AssertEqInt(x,8);
+	return 0;
+}
+TEST(ReadVarint127) {
+	const char data[] = "\177f"; 
+	google::protobuf::uint32 x= 0;
+	const char * offset = ReadVarint32(x, data,2);
+	Assert(offset !=NULL);
+	Assert(*offset == data[1]);
+	AssertEqInt(x,127);
+	return 0;
+}
+TEST(ReadVarint128) {
+	const char data[] = "\200\001f"; 
+	google::protobuf::uint32 x= 0;
+	const char * offset = ReadVarint32(x, data,2);
+	Assert(offset !=NULL);
+	Assert(*offset == data[2]);
+	AssertEqInt(x,128);
+	return 0;
+}
+TEST(ReadVarint2342834) {
+	char good[100];
+	memset(good, '\000' , sizeof(good));
+	google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(2342834, (google::protobuf::uint8 *) good);
+	const char data[] = "\262\377\216\001f"; 
+	google::protobuf::uint32 x= 0;
+	const char * offset = ReadVarint32(x, good,1000);
+	Assert(offset !=NULL);
+	AssertEqInt(x,2342834);
+	Assert(*offset == data[5]);
+	return 0;
+}

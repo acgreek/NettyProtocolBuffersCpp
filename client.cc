@@ -136,25 +136,6 @@ class client
 			}
 		}
 
-		void handle_read_content(const boost::system::error_code& err)
-		{
-			if (!err)
-			{
-				// Write all of the data that has been read so far.
-				std::cout << &response_;
-
-				// Continue reading remaining data until EOF.
-				boost::asio::async_read(socket_, response_,
-						boost::asio::transfer_at_least(1),
-						boost::bind(&client::handle_read_content, this,
-							boost::asio::placeholders::error));
-			}
-			else if (err != boost::asio::error::eof)
-			{
-				std::cout << "Error: " << err << "\n";
-			}
-		}
-
 		tcp::resolver resolver_;
 		tcp::socket socket_;
 		boost::asio::streambuf request_;

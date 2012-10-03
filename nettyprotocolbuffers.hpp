@@ -18,6 +18,21 @@ static bool isCompleteVarInt(const char * varint, size_t buffer_size, size_t &of
 	return false;
 
 }
+const char * ReadVarint32(google::protobuf::uint32 & num, const char * varint, size_t buffer_size ) {
+	num=0;
+	int bits_read=0;
+	while (buffer_size) {
+		unsigned char c = *varint;
+		varint++;
+		num = ((c& 127) << bits_read) + num;
+		if ((c& (1<<7)) == 0)  {
+			return varint;
+		}
+		bits_read+=7;
+		buffer_size --;
+	}
+	return NULL;
+}
 __attribute__((unused)) static bool isCompleteVarInt(boost::asio::streambuf &buffer, size_t &offset_to_data){ 
 	const char * varint = boost::asio::buffer_cast<const char *> (buffer.data());
 	return isCompleteVarInt(varint, buffer.size(), offset_to_data);
@@ -29,11 +44,6 @@ class NettyProtocolBuffersSocket {
 		NettyProtocolBuffersSocket (SOCK_TYPE & socket): socket_(socket), read_buffer_(), write_buffer_() {}
 		virtual ~NettyProtocolBuffersSocket() {}
 		
-		template <typename Handler>
-		void async_write_complete(const boost::system::error_code& e,std::size_t bytes_transferred, boost::tuple<Handler> handle) {
-			boost::get<0>(handle)(e,bytes_transferred);
-		}
-			
 		template <typename Handler>
 		void async_write(google::protobuf::MessageLite& message,  Handler handle) {
 			size_t total_output_size = serializeForWrite(message);
@@ -48,45 +58,8 @@ class NettyProtocolBuffersSocket {
       			boost::asio::write(socket_, boost::asio::buffer(&write_buffer_[0],total_output_size)); 
 		}
 		template <typename Handler>
-		void async_read_rest(const boost::system::error_code& e,std::size_t varint_size,std::size_t message_size, google::protobuf::MessageLite& message, boost::tuple<Handler> handle) {
-			if (e) {
-				boost::get<0>(handle)(e,varint_size+message_size);
-			}
-			if (read_buffer_.size() < message_size) {
-				void (NettyProtocolBuffersSocket<SOCK_TYPE>::*f1)(const boost::system::error_code&,std::size_t varint_size,std::size_t message_size,google::protobuf::MessageLite &mess,boost::tuple<Handler>) =&NettyProtocolBuffersSocket<SOCK_TYPE>::async_read_rest <Handler> ;
-				boost::asio::async_read(socket_,read_buffer_, boost::asio::transfer_at_least(message_size -read_buffer_.size() ), boost::bind(f1,this,boost::asio::placeholders::error, varint_size,message_size, boost::ref(message),handle));
-				return;
-			}
-			const google::protobuf::uint8 *varint= boost::asio::buffer_cast<const google::protobuf::uint8 *> (read_buffer_.data());
-			message.ParseFromArray(varint, message_size);
-			read_buffer_.consume(message_size);
-			boost::get<0>(handle)(e, message_size);
-		}
-		template <typename Handler>
-		void async_read_varint(const boost::system::error_code& e,std::size_t bytes_read, google::protobuf::MessageLite& message, boost::tuple<Handler> handle) {
-			if (e) {
-				boost::get<0>(handle)(e, bytes_read);
-			}
-			size_t offset_to_data=0;
-			if (!isCompleteVarInt(read_buffer_, offset_to_data))  {
-				void (NettyProtocolBuffersSocket<SOCK_TYPE>::*f1)(const boost::system::error_code&,std::size_t offset,google::protobuf::MessageLite &mess,boost::tuple<Handler>) =&NettyProtocolBuffersSocket<SOCK_TYPE>::async_read_varint <Handler> ;
-				boost::asio::async_read(socket_,read_buffer_, boost::asio::transfer_at_least(1), boost::bind(f1,this,boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred, boost::ref(message),handle));
-
-
-				return;
-			}
-			const google::protobuf::uint8 * varint= boost::asio::buffer_cast<const google::protobuf::uint8 *> (read_buffer_.data());
-			google::protobuf::io::CodedInputStream codedInputStream((google::protobuf::uint8 *) varint,offset_to_data) ;
-			google::protobuf::uint32 data_size;
-			codedInputStream.ReadVarint32(&data_size);
-			read_buffer_.consume(offset_to_data);
-			async_read_rest(e,offset_to_data,data_size, message, handle);
-		}
-
-		template <typename Handler>
 		void async_read(google::protobuf::MessageLite& message,  Handler handle) {
-			void (NettyProtocolBuffersSocket<SOCK_TYPE>::*f1)(const boost::system::error_code&,std::size_t offset,google::protobuf::MessageLite &mess,boost::tuple<Handler>) =&NettyProtocolBuffersSocket<SOCK_TYPE>::async_read_varint <Handler> ;
-			boost::asio::async_read(socket_,read_buffer_, boost::asio::transfer_at_least(1), boost::bind(f1,this,boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred, boost::ref(message),boost::make_tuple(handle)));
+			async_setup_read_varint(message, boost::make_tuple(handle));
 		}
 		void read(google::protobuf::MessageLite& message) {
 			boost::system::error_code ec;
@@ -114,6 +87,50 @@ class NettyProtocolBuffersSocket {
 		}
 
 	private:
+		template <typename Handler>
+		void async_write_complete(const boost::system::error_code& e,std::size_t bytes_transferred, boost::tuple<Handler> handle) {
+			boost::get<0>(handle)(e,bytes_transferred);
+		}
+			
+		template <typename Handler>
+		void async_read_rest(const boost::system::error_code& e,std::size_t varint_size,std::size_t message_size, google::protobuf::MessageLite& message, boost::tuple<Handler> handle) {
+			if (e) {
+				boost::get<0>(handle)(e,varint_size+message_size);
+			}
+			if (read_buffer_.size() < message_size) {
+				void (NettyProtocolBuffersSocket<SOCK_TYPE>::*f1)(const boost::system::error_code&,std::size_t varint_size,std::size_t message_size,google::protobuf::MessageLite &mess,boost::tuple<Handler>) =&NettyProtocolBuffersSocket<SOCK_TYPE>::async_read_rest <Handler> ;
+				boost::asio::async_read(socket_,read_buffer_, boost::asio::transfer_at_least(message_size -read_buffer_.size() ), boost::bind(f1,this,boost::asio::placeholders::error, varint_size,message_size, boost::ref(message),handle));
+				return;
+			}
+			const google::protobuf::uint8 *varint= boost::asio::buffer_cast<const google::protobuf::uint8 *> (read_buffer_.data());
+			message.ParseFromArray(varint, message_size);
+			read_buffer_.consume(message_size);
+			boost::get<0>(handle)(e, message_size);
+		}
+		template <typename Handler>
+		void async_setup_read_varint(google::protobuf::MessageLite& message, boost::tuple<Handler> handle) {
+			void (NettyProtocolBuffersSocket<SOCK_TYPE>::*f1)(const boost::system::error_code&,std::size_t offset,google::protobuf::MessageLite &mess,boost::tuple<Handler>) =&NettyProtocolBuffersSocket<SOCK_TYPE>::async_read_varint <Handler> ;
+			boost::asio::async_read(socket_,read_buffer_, boost::asio::transfer_at_least(1), boost::bind(f1,this,boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred, boost::ref(message),handle));
+		}
+		template <typename Handler>
+		void async_read_varint(const boost::system::error_code& e,std::size_t bytes_read, google::protobuf::MessageLite& message, boost::tuple<Handler> handle) {
+			if (e) {
+				boost::get<0>(handle)(e, bytes_read);
+				return ;
+			}
+
+			const char * varint= boost::asio::buffer_cast<const char *> (read_buffer_.data());
+			google::protobuf::uint32 data_size;
+			const char * ptr =  ReadVarint32(data_size, varint, read_buffer_.size());
+			if (NULL == ptr)  {
+				async_setup_read_varint(message, handle);
+				return;
+			}
+			size_t offset_to_data = ptr - varint;
+			read_buffer_.consume(offset_to_data);
+			async_read_rest(e,offset_to_data,data_size, message, handle);
+		}
+
 		size_t serializeForWrite(google::protobuf::MessageLite& message) {
 			int serialized_size = message.ByteSize();
 			size_t total_output_size = google::protobuf::io::CodedOutputStream::VarintSize32(serialized_size);
@@ -121,10 +138,10 @@ class NettyProtocolBuffersSocket {
 			if (write_buffer_.size() < total_output_size) {
 				write_buffer_.resize(total_output_size+1);
 			}
-			google::protobuf::io::ArrayOutputStream output(&write_buffer_[0],total_output_size, -1);
-			google::protobuf::io::CodedOutputStream codedOutputStream(&output);
-			codedOutputStream .WriteVarint32(serialized_size);
-			message.SerializeToCodedStream (&codedOutputStream );
+			google::protobuf::uint8 * offset = (google::protobuf::uint8*)&write_buffer_[0];
+			offset = google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(serialized_size, offset);
+			assert(((char *) offset- (char *) &write_buffer_[0]) == google::protobuf::io::CodedOutputStream::VarintSize32(serialized_size));
+			message.SerializeToArray((void *)offset, serialized_size);
 			return total_output_size;
 
 		}
